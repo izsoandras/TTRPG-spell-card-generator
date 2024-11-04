@@ -1,8 +1,9 @@
 import pptx
 import pandas as pd
 import re
-import win32com.client
 import os
+from bs4 import BeautifulSoup
+
 
 class_name = "sorcerer/wizard"
 spell_list = ["dancing lights", "resistance", "ray of frost", "mage hand", "read magic", "prestidigitation",
@@ -68,6 +69,64 @@ def replace_text_by_id(slide, textbox_id, new_text, *args):
     replace_text(s.text_frame, new_text, *args)
 
 
+def replace_text_pretty(text_frame, html_format):
+    orig_run = text_frame.paragraphs[0].runs[0]
+    # save font name and size
+    font = orig_run.font
+    font_name = font.name
+    font_size = font.size
+
+    # clear other formatting
+    font_bold = False
+    font_italic = False
+    font_underline = False
+    text_frame.clear()
+
+
+    try:
+        font_color = font.color.rgb
+        rgbOk = True
+    except AttributeError:
+        font_color = font.color.theme_color
+        rgbOk = False
+
+    soup = BeautifulSoup(html_format, 'html.parser')
+    current_node = next(next(soup.children).children) # we know that soup contains at least 1 paragraph, which is already added
+    visit_stack = []
+    for child in reversed(soup.contents[1:]):
+        visit_stack.append((child, True))
+    for child in reversed(soup.contents[0].contents):
+        visit_stack.append((child, True))
+    while visit_stack:
+        current_node, is_before = visit_stack.pop()
+        if current_node.name is None:    # current node is a leaf text
+            new_run = text_frame.paragraphs[-1].add_run()
+            new_run.text = str(current_node)
+            new_run.font.name = font_name
+            new_run.font.size = font_size
+            new_run.font.bold = font_bold
+            new_run.font.italic = font_italic
+            new_run.font.underline = font_underline
+        elif current_node.name == 'p':
+            text_frame.add_paragraph()
+            for child in reversed(current_node.contents):
+                visit_stack.append((child, True))
+        else:
+            if current_node.name == 'i':
+                font_italic = is_before
+            elif current_node.name == 'b':
+                font_bold = is_before
+            elif current_node.name == 'u':
+                font_underline = is_before
+            else:
+                continue
+
+            if is_before:
+                visit_stack.append((current_node, False))
+                for child in reversed(current_node.contents):
+                    visit_stack.append((child, True))
+
+
 if __name__ == "__main__":
     print("Loading spell database")
     df = pd.read_excel("spells_by_class.xlsx", "Sorcerer-Wizard")
@@ -112,7 +171,8 @@ if __name__ == "__main__":
         else:
             table.cell(1, 2).text_frame.clear()
             table.cell(1, 3).text_frame.clear()
-        replace_text(table.cell(2, 0).text_frame, spell_row['description'])
+        # replace_text(table.cell(2, 0).text_frame, spell_row['description'])
+        replace_text_pretty(table.cell(2, 0).text_frame, spell_row['description_formated'])
         lvl = re.search(f"{class_name} [0-9]+", spell_row['spell_level']).group()[-1].strip()
         replace_text_by_id(presentation.slides[0], 11, lvl)     # id: 11
 
@@ -124,6 +184,6 @@ if __name__ == "__main__":
 
     print("Exporting done")
     not_found_spells = spell_list[~spell_list.isin(lower_names)]
-    if not_found_spells:
+    if not not_found_spells.empty:
         print("The following spells have not been found:")
         print(not_found_spells)

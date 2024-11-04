@@ -1,0 +1,1 @@
+Spell sheet: https://docs.google.com/spreadsheets/d/197aOpt71IDoO6yCmOB1mtEhGE598jBVs5iZox8YMHAk/edit?gid=1009093993#gid=1009093993

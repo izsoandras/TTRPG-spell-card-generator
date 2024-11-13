@@ -8,11 +8,13 @@ from bs4 import BeautifulSoup
 
 
 class_name = "sorcerer/wizard"
+# sheet_name = "Sorcerer-Wizard"    # not used if full spell list excel is available
 # spell_list = ["disguise self"]
 spell_list = {"dancing lights", "resistance", "ray of frost", "mage hand", "read magic", "prestidigitation",
               "detect magic", "detect poison", "mage armor", "burning hands", "disguise self", "identify",
               "chastise", "fire breath", "flaming sphere", "color spray", "see invisibility",
-              "fireball", "arcane mark", "alarm", "burning arc", "message", "mending"}
+              "fireball", "arcane mark", "alarm", "burning arc", "message", "mending", "comprehend languages",
+              "silent image", "eagle's splendor", "diminish resistance"}
 
 arcane_class_rgx = "wizard|sorcerer|bard"
 divine_class_rgx = "cleric|druid|paladin|ranger|inquisitor|oracle|hunter|shaman|warpriest"
@@ -157,7 +159,7 @@ def populate_metatemplate(class_name, spell_row, slide):
         slide.placeholders[14].insert_picture("./assets/icons/arcane.png")
     if re.search(divine_class_rgx, spell_row['spell_level']):
         slide.placeholders[15].insert_picture("./assets/icons/divine.png")
-    if (not pd.isna(spell_row['spell_resistence'])) and spell_row['spell_resistence'] != 'no':
+    if (not pd.isna(spell_row['spell_resistance'])) and spell_row['spell_resistance'] != 'no':
         slide.placeholders[16].insert_picture("./assets/icons/shield.png")
 
     # create name and components
@@ -234,12 +236,13 @@ def populate_metatemplate(class_name, spell_row, slide):
         replace_text(table.cell(r_idx,c_idx).text_frame, d[0])
         replace_text(table.cell(r_idx, c_idx+1).text_frame, d[1])
 
-    replace_text_pretty(table.cell(desc_row_idx, 0).text_frame, spell_row['description_formated'])
+    replace_text_pretty(table.cell(desc_row_idx, 0).text_frame, spell_row['description_formatted'])
 
 
 if __name__ == "__main__":
     print("Loading spell database")
-    df = pd.read_excel("spells_by_class.xlsx", "Sorcerer-Wizard")
+    # df = pd.read_excel("spells_by_class.xlsx", sheet_name)
+    df = pd.read_excel("spell_full.xlsx")
     print("Loading done")
 
     spell_list = pd.Series(list(spell_list))

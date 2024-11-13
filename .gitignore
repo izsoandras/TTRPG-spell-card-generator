@@ -1,6 +1,6 @@
 /*
-!/templates
-!/templates/*
+!/assets
+!/assets/*
 !*.py
 !.gitignore
 !README.md
